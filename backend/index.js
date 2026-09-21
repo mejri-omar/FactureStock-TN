@@ -21,17 +21,22 @@ const invoiceRoutes = require('./invoices');
 require('dotenv').config();
 
 const app = express();
-const allowedOrigins = new Set([
-  'https://facture-stock-tn.vercel.app',
-  'http://localhost:5173',
-  'http://localhost:3000',
-]);
 
 const corsOptions = {
   origin(origin, callback) {
-    if (!origin || allowedOrigins.has(origin)) {
+    // Allow requests with no origin (like mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+
+    const isAllowedOrigin =
+      origin === 'https://facture-stock-tn.vercel.app' ||
+      origin === 'http://localhost:5173' ||
+      origin === 'http://localhost:3000' ||
+      /^https:\/\/facture-stock-.*\.vercel\.app$/.test(origin);
+
+    if (isAllowedOrigin) {
       return callback(null, true);
     }
+
     const err = new Error('Origin not allowed by CORS');
     err.status = 403;
     return callback(err);
