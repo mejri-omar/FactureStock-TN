@@ -1,0 +1,2 @@
+ALTER TABLE products
+ADD COLUMN IF NOT EXISTS cout_unitaire NUMERIC(10,2);
