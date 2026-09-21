@@ -21,21 +21,13 @@ const invoiceRoutes = require('./invoices');
 require('dotenv').config();
 
 const app = express();
-const defaultAllowedOrigins = [
+const allowedOrigins = new Set([
+  'https://facture-stock-tn.vercel.app',
   'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  'http://localhost:4173',
-  'http://127.0.0.1:4173',
-];
+  'http://localhost:3000',
+]);
 
-const configuredOrigins = (process.env.CORS_ORIGINS || '')
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-
-const allowedOrigins = new Set([...defaultAllowedOrigins, ...configuredOrigins]);
-
-app.use(cors({
+const corsOptions = {
   origin(origin, callback) {
     if (!origin || allowedOrigins.has(origin)) {
       return callback(null, true);
@@ -44,7 +36,13 @@ app.use(cors({
     err.status = 403;
     return callback(err);
   },
-}));
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+};
+
+app.use(cors(corsOptions));
+app.options('/{*splat}', cors(corsOptions));
 app.use(express.json());
 
 app.get('/', (req, res) => {
