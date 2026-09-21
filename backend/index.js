@@ -31,14 +31,16 @@ const exactAllowedOrigins = [
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Autoriser les requêtes sans origine (Postman, curl, serveur à serveur)
     if (!origin) return callback(null, true);
 
-    const isVercelPreview = /^https:\/\/facture-stock-[a-zA-Z0-9_-]+\.vercel\.app$/.test(origin);
+    const isAllowed =
+      exactAllowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app');
 
-    if (exactAllowedOrigins.includes(origin) || isVercelPreview) {
+    if (isAllowed) {
       callback(null, true);
     } else {
+      console.warn('Blocked by CORS, origin received:', origin);
       const err = new Error('Origin not allowed by CORS');
       err.status = 403;
       callback(err);
