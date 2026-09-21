@@ -1,12 +1,4 @@
 const express = require('express');
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
-
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception thrown:', err);
-  process.exit(1);
-});
 const cors = require('cors');
 const pool = require('./db');
 const authRoutes = require('./auth');
@@ -20,31 +12,44 @@ const dashboardRoutes = require('./dashboard');
 const invoiceRoutes = require('./invoices');
 require('dotenv').config();
 
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception thrown:', err);
+  process.exit(1);
+});
+
 const app = express();
 
+const exactAllowedOrigins = [
+  'https://facture-stock-tn.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+
 const corsOptions = {
-  origin(origin, callback) {
+  origin: (origin, callback) => {
+    // Autoriser les requêtes sans origine (Postman, curl, serveur à serveur)
     if (!origin) return callback(null, true);
 
-    const isAllowedOrigin =
-      origin === 'https://facture-stock-tn.vercel.app' ||
-      origin === 'http://localhost:5173' ||
-      origin === 'http://localhost:3000' ||
-      /^https:\/\/facture-stock-.*\.vercel\.app$/.test(origin);
+    const isVercelPreview = /^https:\/\/facture-stock-[a-zA-Z0-9_-]+\.vercel\.app$/.test(origin);
 
-    if (isAllowedOrigin) {
-      return callback(null, true);
+    if (exactAllowedOrigins.includes(origin) || isVercelPreview) {
+      callback(null, true);
+    } else {
+      const err = new Error('Origin not allowed by CORS');
+      err.status = 403;
+      callback(err);
     }
-
-    const err = new Error('Origin not allowed by CORS');
-    err.status = 403;
-    return callback(err);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 };
 
+// cors() gère automatiquement les requêtes OPTIONS (preflight)
 app.use(cors(corsOptions));
 app.use(express.json());
 
@@ -72,9 +77,10 @@ app.use('/api', userRoutes);
 app.use('/api', dashboardRoutes);
 app.use('/api', invoiceRoutes);
 
+// Gestion centralisée des erreurs (renvoie 403 propre pour les CORS bloqués)
 app.use((err, req, res, next) => {
-  if (err && err.message === 'Origin not allowed by CORS') {
-    return res.status(err.status || 403).json({ error: err.message });
+  if (err.message === 'Origin not allowed by CORS') {
+    return res.status(403).json({ error: 'Origin not allowed by CORS' });
   }
 
   console.error(err);
@@ -83,7 +89,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
 
 server.on('error', (err) => {
@@ -94,3 +100,5 @@ server.on('error', (err) => {
 server.on('close', () => {
   console.log('HTTP server closed');
 });
+
+module.exports = app;
