@@ -24,7 +24,6 @@ const app = express();
 
 const corsOptions = {
   origin(origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, server-to-server)
     if (!origin) return callback(null, true);
 
     const isAllowedOrigin =
@@ -47,7 +46,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('/{*splat}', cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 app.get('/', (req, res) => {
