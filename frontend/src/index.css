@@ -16,8 +16,13 @@
   --font: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-/* Page size for receipt printing */
+/* Factures print on A4; the 80mm ticket uses a named page set on .print-receipt */
 @page {
+  size: A4;
+  margin: 12mm;
+}
+
+@page receipt-page {
   size: 80mm auto;
   margin: 0;
 }
@@ -254,15 +259,19 @@ h3 {
   display: none;
 }
 
+/* Ticket de caisse: only the receipt is printed, on its own 80mm page.
+   The class is set on <body> by Checkout while the print modal is open. */
 @media print {
-   body * {
+   body.printing-receipt * {
      visibility: hidden;
    }
-   .print-receipt, .print-receipt * {
+   body.printing-receipt .print-receipt,
+   body.printing-receipt .print-receipt * {
      visibility: visible;
    }
-   .print-receipt {
+   body.printing-receipt .print-receipt {
      display: block;
+     page: receipt-page;
      width: 80mm;
      margin: 0 auto;
      padding: 0.5rem;
@@ -352,10 +361,22 @@ textarea {
   flex-wrap: wrap;
 }
 
-.user-actions .btn {
+.user-actions .btn,
+.row-actions .btn,
+.invoice-actions .btn {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+}
+
+.row-actions {
+  white-space: nowrap;
+}
+
+.invoice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .modal-title-row {
@@ -396,6 +417,35 @@ textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1.5rem;
+}
+
+.invoice-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--text-primary);
+}
+
+.invoice-header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.15rem;
+}
+
+.invoice-header p {
+  margin: 0.1rem 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.invoice-header-meta {
+  text-align: right;
+}
+
+.invoice-header-meta h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
 }
 
 .invoice-summary {
@@ -678,6 +728,25 @@ textarea {
   .invoice-document {
     border: 0;
     padding: 0;
+  }
+
+  .invoice-header {
+    display: block;
+  }
+
+  .invoice-parties {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .invoice-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .data-table {
+    font-size: 0.85rem;
   }
 
   .table-scroll {

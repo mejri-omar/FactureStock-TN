@@ -1,6 +1,6 @@
 const express = require('express');
 const pool = require('./db');
-const { verifyToken } = require('./authMiddleware');
+const { verifyToken, requireAdmin } = require('./authMiddleware');
 
 const router = express.Router();
 
@@ -154,7 +154,8 @@ router.get('/invoices/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
   try {
     const inv = await pool.query(
-      `SELECT i.*, c.name AS customer_name, u.username AS issued_by_username
+      `SELECT i.*, c.name AS customer_name, c.matricule_fiscal AS customer_matricule_fiscal,
+              c.address AS customer_address, u.username AS issued_by_username
        FROM invoices i
        LEFT JOIN customers c ON i.customer_id = c.id
        LEFT JOIN users u ON i.issued_by = u.id
@@ -168,6 +169,44 @@ router.get('/invoices/:id', verifyToken, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch invoice' });
+  }
+});
+
+// Delete an invoice. invoice_items cascade; the linked sale is left untouched,
+// which frees the sale so a new invoice can be issued from it.
+router.delete('/invoices/:id', verifyToken, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    return res.status(400).json({ error: 'Invalid invoice id' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const existing = await client.query(
+      'SELECT id, invoice_number FROM invoices WHERE id = $1 FOR UPDATE',
+      [id]
+    );
+    if (existing.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+
+    await client.query('DELETE FROM invoice_items WHERE invoice_id = $1', [id]);
+    const deleted = await client.query(
+      'DELETE FROM invoices WHERE id = $1 RETURNING id, invoice_number',
+      [id]
+    );
+
+    await client.query('COMMIT');
+    res.json({ message: 'Facture supprimée', id: deleted.rows[0].id });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete invoice' });
+  } finally {
+    client.release();
   }
 });
 

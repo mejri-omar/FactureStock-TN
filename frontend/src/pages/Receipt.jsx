@@ -1,10 +1,10 @@
 import { useAuth } from '../context/AuthContext';
-
-// Business info - easy to edit later
-const BUSINESS_NAME = 'STE FIRAS FERJANI';
-const BUSINESS_ADDRESS = 'Alimentation Générale en Gros — Rue Bani Tamim, B05, Raccada, Kairouan';
-const BUSINESS_PHONE = 'Tél : 93 461 611 / 96 746 624';
-const BUSINESS_TAX_ID = 'Matricule Fiscal : 1811540V/P/M/000';
+import {
+  BUSINESS_NAME,
+  BUSINESS_ADDRESS,
+  BUSINESS_PHONE,
+  BUSINESS_TAX_ID,
+} from '../businessInfo';
 
 export default function Receipt({ sale, cashier }) {
   const { user } = useAuth();
@@ -44,6 +44,10 @@ export default function Receipt({ sale, cashier }) {
 
       <p style={{ margin: '0.2rem 0', fontSize: '0.9rem' }}>N° {sale.id}</p>
       <p style={{ margin: '0.2rem 0', fontSize: '0.9rem' }}>Date : {new Date(sale.date).toLocaleString('fr-FR')}</p>
+      <p style={{ margin: '0.2rem 0', fontSize: '0.9rem' }}>Client : {sale.customerName || '—'}</p>
+      <p style={{ margin: '0.2rem 0', fontSize: '0.9rem' }}>
+        Matricule fiscal : {sale.customerMatricule || '—'}
+      </p>
       <p style={{ margin: '0.2rem 0', fontSize: '0.9rem' }}>Caissier : {cashierName}</p>
 
       <hr style={{ margin: '0.5rem 0', border: '1px solid #000' }} />

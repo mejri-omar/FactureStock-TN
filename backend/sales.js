@@ -10,8 +10,8 @@ router.post('/sales', verifyToken, async (req, res) => {
   if (!customer_id || !payment_method || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'customer_id, payment_method, and items are required' });
   }
-  if (!['cash', 'card', 'credit'].includes(payment_method)) {
-    return res.status(400).json({ error: 'payment_method must be cash, card, or credit' });
+  if (!['cash', 'credit'].includes(payment_method)) {
+    return res.status(400).json({ error: 'payment_method must be cash or credit' });
   }
 
   const client = await pool.connect();

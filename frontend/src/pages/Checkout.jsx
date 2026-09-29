@@ -35,12 +35,17 @@ export default function Checkout() {
   }, []);
 
   useEffect(() => {
-    if (showPrintModal) {
-      const timer = setTimeout(() => {
-        window.print();
-      }, 300);
-      return () => clearTimeout(timer);
-    }
+    if (!showPrintModal) return;
+
+    document.body.classList.add('printing-receipt');
+    const timer = setTimeout(() => {
+      window.print();
+    }, 300);
+
+    return () => {
+      clearTimeout(timer);
+      document.body.classList.remove('printing-receipt');
+    };
   }, [showPrintModal]);
 
   const handleAddToCart = () => {
@@ -244,7 +249,6 @@ export default function Checkout() {
         <label>Paiement : </label>
         <select className="form-input" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
           <option value="cash">Espèces</option>
-          <option value="card">Carte</option>
           <option value="credit">Crédit (paiement différé)</option>
         </select>
       </div>
